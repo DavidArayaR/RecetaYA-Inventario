@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/inventario
+  h2:
+    console:
+      enabled: true
+      path: /consola-h2
+server:
+  address: 127.0.0.1
