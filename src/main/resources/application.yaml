@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: desarrollo
   application:
     name: inventario
   task:
@@ -17,6 +19,10 @@ spring:
     locations: classpath:bd/migracion
 
 recetaya:
+  seguridad:
+    jwt:
+      emisor: ${RECETAYA_JWT_EMISOR:http://localhost:8081}
+      secreto: ${RECETAYA_JWT_SECRETO:}
   integracion:
     sqs:
       habilitada: ${RECETAYA_SQS_HABILITADA:false}
