@@ -33,7 +33,7 @@ class PruebasPersistenciaInventario {
     @Test
     void migracionInicialExisteYHibernatePuedeUsarLasEntidades() {
         assertNotNull(flyway.info().current());
-        assertEquals("1", flyway.info().current().getVersion().toString());
+        assertEquals("3", flyway.info().current().getVersion().toString());
         assertTrue(medicamentos.findAll().isEmpty());
     }
 
@@ -73,5 +73,43 @@ class PruebasPersistenciaInventario {
         assertThrows(DataIntegrityViolationException.class,
                 () -> jdbc.update("INSERT INTO existencia_sucursal (sucursal_id, medicamento_id, cantidad_fisica, cantidad_reservada) VALUES (?, ?, ?, ?)",
                         UUID.randomUUID(), UUID.randomUUID(), 2, 0));
+    }
+
+    @Test
+    void baseImpideReservasDuplicadasYEstadosInvalidos() {
+        UUID sucursalId = UUID.randomUUID();
+        UUID recetaId = UUID.randomUUID();
+        jdbc.update("INSERT INTO sucursal (id, nombre) VALUES (?, ?)", sucursalId, "Centro");
+        jdbc.update("INSERT INTO reserva_existencias (id, receta_id, sucursal_id, estado, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                UUID.randomUUID(), recetaId, sucursalId, "RESERVADA");
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbc.update("INSERT INTO reserva_existencias (id, receta_id, sucursal_id, estado, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        UUID.randomUUID(), recetaId, sucursalId, "RESERVADA"));
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbc.update("INSERT INTO reserva_existencias (id, receta_id, sucursal_id, estado, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        UUID.randomUUID(), UUID.randomUUID(), sucursalId, "OTRO"));
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbc.update("INSERT INTO reserva_existencias (id, receta_id, sucursal_id, estado, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "RESERVADA"));
+    }
+
+    @Test
+    void baseImpideDetallesSinReferenciaOCantidadPositiva() {
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbc.update("INSERT INTO reserva_detalle (reserva_id, medicamento_id, cantidad) VALUES (?, ?, ?)",
+                        UUID.randomUUID(), UUID.randomUUID(), 1));
+
+        UUID sucursalId = UUID.randomUUID();
+        UUID medicamentoId = UUID.randomUUID();
+        UUID reservaId = UUID.randomUUID();
+        jdbc.update("INSERT INTO sucursal (id, nombre) VALUES (?, ?)", sucursalId, "Centro");
+        jdbc.update("INSERT INTO medicamento (id, codigo, nombre) VALUES (?, ?, ?)", medicamentoId,
+                "M-" + UUID.randomUUID(), "Medicamento");
+        jdbc.update("INSERT INTO reserva_existencias (id, receta_id, sucursal_id, estado, fecha_creacion, fecha_actualizacion) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                reservaId, UUID.randomUUID(), sucursalId, "RESERVADA");
+        assertThrows(DataIntegrityViolationException.class,
+                () -> jdbc.update("INSERT INTO reserva_detalle (reserva_id, medicamento_id, cantidad) VALUES (?, ?, ?)",
+                        reservaId, medicamentoId, 0));
     }
 }

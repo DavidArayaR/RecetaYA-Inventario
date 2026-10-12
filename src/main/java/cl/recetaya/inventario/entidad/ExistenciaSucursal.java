@@ -8,6 +8,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import cl.recetaya.inventario.excepcion.ExcepcionConflictoDatos;
 
 @Entity
 @Table(name = "existencia_sucursal")
@@ -49,4 +50,26 @@ public class ExistenciaSucursal {
     public void asignarCantidadFisica(int cantidadFisica) { this.cantidadFisica = cantidadFisica; }
     public int obtenerCantidadReservada() { return cantidadReservada; }
     public int obtenerCantidadDisponible() { return cantidadFisica - cantidadReservada; }
+
+    public void reservar(int cantidad) {
+        if (cantidad <= 0 || cantidad > obtenerCantidadDisponible()) {
+            throw new ExcepcionConflictoDatos("Existencias insuficientes para reservar el medicamento.");
+        }
+        cantidadReservada += cantidad;
+    }
+
+    public void liberar(int cantidad) {
+        if (cantidad <= 0 || cantidad > cantidadReservada) {
+            throw new ExcepcionConflictoDatos("La reserva excede las existencias reservadas.");
+        }
+        cantidadReservada -= cantidad;
+    }
+
+    public void consumir(int cantidad) {
+        if (cantidad <= 0 || cantidad > cantidadReservada || cantidad > cantidadFisica) {
+            throw new ExcepcionConflictoDatos("La reserva no puede consumirse por inconsistencia de existencias.");
+        }
+        cantidadReservada -= cantidad;
+        cantidadFisica -= cantidad;
+    }
 }
