@@ -14,6 +14,8 @@ import cl.recetaya.inventario.excepcion.ExcepcionRecursoNoEncontrado;
 import cl.recetaya.inventario.excepcion.ExcepcionSolicitudInvalida;
 import cl.recetaya.inventario.repositorio.RepositorioMedicamento;
 import cl.recetaya.inventario.repositorio.RepositorioExistenciaSucursal;
+import cl.recetaya.inventario.repositorio.RepositorioReservaDetalle;
+import cl.recetaya.inventario.repositorio.RepositorioReservaExistencias;
 import cl.recetaya.inventario.repositorio.RepositorioSucursal;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -29,13 +31,19 @@ public class ServicioInventario {
     private final RepositorioMedicamento medicamentos;
     private final RepositorioSucursal sucursales;
     private final RepositorioExistenciaSucursal existencias;
+    private final RepositorioReservaDetalle detallesReserva;
+    private final RepositorioReservaExistencias reservas;
 
     public ServicioInventario(RepositorioMedicamento medicamentos,
                              RepositorioSucursal sucursales,
-                             RepositorioExistenciaSucursal existencias) {
+                             RepositorioExistenciaSucursal existencias,
+                             RepositorioReservaDetalle detallesReserva,
+                             RepositorioReservaExistencias reservas) {
         this.medicamentos = medicamentos;
         this.sucursales = sucursales;
         this.existencias = existencias;
+        this.detallesReserva = detallesReserva;
+        this.reservas = reservas;
     }
 
     public List<RespuestaExistencias> consultarInventario() {
@@ -74,6 +82,17 @@ public class ServicioInventario {
         return aRespuestaMedicamento(medicamentos.saveAndFlush(medicamento));
     }
 
+    @Transactional
+    public void eliminarMedicamento(UUID id) {
+        Medicamento medicamento = buscarMedicamento(id);
+        if (existencias.existePorMedicamento(id) || detallesReserva.existePorMedicamento(id)) {
+            throw new ExcepcionConflictoDatos(
+                    "No se puede eliminar el medicamento porque tiene existencias o forma parte del historial de reservas.");
+        }
+        medicamentos.delete(medicamento);
+        medicamentos.flush();
+    }
+
     public List<RespuestaSucursal> listarSucursales() {
         return sucursales.findAll(Sort.by("nombre")).stream().map(this::aRespuestaSucursal).toList();
     }
@@ -95,6 +114,17 @@ public class ServicioInventario {
         sucursal.asignarNombre(solicitud.nombre().trim());
         sucursal.asignarDireccion(limpiarOpcional(solicitud.direccion()));
         return aRespuestaSucursal(sucursales.saveAndFlush(sucursal));
+    }
+
+    @Transactional
+    public void eliminarSucursal(UUID id) {
+        Sucursal sucursal = buscarSucursal(id);
+        if (existencias.existePorSucursal(id) || reservas.existePorSucursal(id)) {
+            throw new ExcepcionConflictoDatos(
+                    "No se puede eliminar la sucursal porque tiene existencias o forma parte del historial de reservas.");
+        }
+        sucursales.delete(sucursal);
+        sucursales.flush();
     }
 
     public List<RespuestaExistencias> consultarExistenciasSucursal(UUID sucursalId) {

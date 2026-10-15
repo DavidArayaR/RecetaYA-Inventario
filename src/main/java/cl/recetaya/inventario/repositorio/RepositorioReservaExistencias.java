@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface RepositorioReservaExistencias extends JpaRepository<ReservaExistencias, UUID> {
+    @Query("select count(r) > 0 from ReservaExistencias r where r.sucursal.id = :sucursalId")
+    boolean existePorSucursal(@Param("sucursalId") UUID sucursalId);
+
     @Query("select r from ReservaExistencias r join fetch r.sucursal where r.recetaId = :recetaId")
     Optional<ReservaExistencias> buscarPorReceta(@Param("recetaId") UUID recetaId);
 

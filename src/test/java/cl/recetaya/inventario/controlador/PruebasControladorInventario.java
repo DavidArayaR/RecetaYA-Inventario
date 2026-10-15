@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -100,6 +101,37 @@ class PruebasControladorInventario {
         clienteSimulado.perform(get(RUTA_BASE + "/sucursales/" + sucursal.id() + "/existencias/" + medicamento.id()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombreMedicamento").value("Vitamina C"));
+    }
+
+    @Test
+    void eliminaMedicamentosYSucursalesSinReferencias() throws Exception {
+        RespuestaMedicamento medicamento = servicio.crearMedicamento(
+                new SolicitudMedicamento("MED-ELIMINAR", "Temporal", null));
+        RespuestaSucursal sucursal = servicio.crearSucursal(new SolicitudSucursal("Temporal", null));
+
+        clienteSimulado.perform(delete(RUTA_BASE + "/medicamentos/" + medicamento.id()))
+                .andExpect(status().isNoContent());
+        clienteSimulado.perform(delete(RUTA_BASE + "/sucursales/" + sucursal.id()))
+                .andExpect(status().isNoContent());
+        clienteSimulado.perform(get(RUTA_BASE + "/medicamentos/" + medicamento.id()))
+                .andExpect(status().isNotFound());
+        clienteSimulado.perform(get(RUTA_BASE + "/sucursales/" + sucursal.id()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rechazaEliminarCatalogosConExistenciasReferenciadas() throws Exception {
+        RespuestaMedicamento medicamento = servicio.crearMedicamento(
+                new SolicitudMedicamento("MED-PROTEGIDO", "Con existencias", null));
+        RespuestaSucursal sucursal = servicio.crearSucursal(new SolicitudSucursal("Con existencias", null));
+        servicio.actualizarExistencias(sucursal.id(), medicamento.id(), 5);
+
+        clienteSimulado.perform(delete(RUTA_BASE + "/medicamentos/" + medicamento.id()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigoEstado").value(409));
+        clienteSimulado.perform(delete(RUTA_BASE + "/sucursales/" + sucursal.id()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigoEstado").value(409));
     }
 
     @Test

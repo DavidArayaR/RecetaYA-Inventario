@@ -13,6 +13,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface RepositorioExistenciaSucursal extends JpaRepository<ExistenciaSucursal, ClaveExistenciaSucursal> {
+    @Query("select count(s) > 0 from ExistenciaSucursal s where s.medicamento.id = :medicamentoId")
+    boolean existePorMedicamento(@Param("medicamentoId") UUID medicamentoId);
+
+    @Query("select count(s) > 0 from ExistenciaSucursal s where s.sucursal.id = :sucursalId")
+    boolean existePorSucursal(@Param("sucursalId") UUID sucursalId);
+
     @Query("select s from ExistenciaSucursal s join fetch s.medicamento join fetch s.sucursal order by s.sucursal.nombre, s.medicamento.nombre")
     List<ExistenciaSucursal> buscarTodasConReferencias();
 
