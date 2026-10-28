@@ -21,29 +21,27 @@ Microservicio REST para administrar medicamentos, sucursales y existencias. Usa 
 - Para escribir, Auth debe estar iniciado en `http://localhost:8081` y debe existir un usuario local con rol `FARMACEUTICO`.
 - En Windows usar PowerShell; en macOS y Linux usar Bash. Maven Wrapper evita instalar Maven aparte.
 
-Mientras los cuatro servicios estén en el repositorio actual, clonar y entrar en `inventario`:
+Este repositorio es independiente y **todavía no tiene remoto de GitHub**. Para probar la clonación desde su raíz local, usar una carpeta de destino vacía. Al publicarlo, sustituir `.` por la URL real del nuevo repositorio.
 
 ### Windows
 
 ```powershell
-git clone https://github.com/DavidArayaR/RecetaYA-DavidAraya-TomasHoyt.git receta-ya
-Set-Location .\receta-ya
+git clone . ..\inventario-copia
+Set-Location ..\inventario-copia
 git switch develop
-Set-Location .\inventario
 java -version
 ```
 
 ### macOS y Linux
 
 ```bash
-git clone https://github.com/DavidArayaR/RecetaYA-DavidAraya-TomasHoyt.git receta-ya
-cd receta-ya
+git clone . ../inventario-copia
+cd ../inventario-copia
 git switch develop
-cd inventario
 java -version
 ```
 
-Si Inventario se publica luego en un repositorio independiente, clonar su URL y ejecutar los comandos siguientes desde la raíz de ese repositorio; no habrá que entrar en `inventario/`.
+Todos los comandos siguientes se ejecutan desde la raíz del repositorio de Inventario, donde están `pom.xml` y Maven Wrapper.
 
 ## Compilar, probar y empaquetar
 
@@ -159,6 +157,6 @@ La reserva asíncrona mediante SQS queda deshabilitada en esta demostración loc
 
 ## Ramas y entrega
 
-En el repositorio actual, `main` representa la versión estable, `develop` integra los servicios y `feature/inventario-service` identifica el trabajo de Inventario. Para IE9, mostrar las ramas y commits descriptivos con `git branch -a` y `git log --oneline`; publicar únicamente la versión revisada en el repositorio que se entregue al docente.
+En este repositorio, `main` representa la base estable, `develop` prepara la integración y `feature/inventario-service` permite continuar el trabajo de Inventario. Las tres ramas locales parten de la extracción del servicio desde el repositorio original. Para IE9, mostrar las ramas y commits descriptivos con `git branch -a` y `git log --oneline`. Cuando se publique, indicar su URL real en el material de entrega.
 
 La evaluación solicita enlace(s) de GitHub y un video de **3 a 8 minutos**. En el video deben escucharse las voces de ambos estudiantes con audio claro; mostrar comandos y resultados ejecutados, respuestas de Postman y filas reales de H2. Entregar los enlaces en AVA y enviar copia al correo del docente según la pauta.
